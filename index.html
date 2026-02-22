@@ -5,52 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Consejos Tegucigalpa y Comayagüela - Indicadores</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <style>
-      body { font-family: 'Open Sans', sans-serif; }
-      h1, h2, h3, .serif { font-family: 'Libre Baskerville', serif; }
-      
-      /* Animaciones de Skeleton Loading */
-      @keyframes shimmer {
-        0% { background-position: -1000px 0; }
-        100% { background-position: 1000px 0; }
-      }
-      .skeleton {
-        animation: shimmer 2s infinite linear;
-        background: linear-gradient(to right, #eff1f3 4%, #e2e2e2 25%, #eff1f3 36%);
-        background-size: 1000px 100%;
-      }
-
-      /* Utilidades de Impresión / PDF */
-      @media print {
-        body { background-color: white !important; -webkit-print-color-adjust: exact; }
-        .no-print, header, nav, button, .shadow-xl { display: none !important; }
-        .print-only { display: block !important; }
-        .print-break-avoid { break-inside: avoid; }
-        .bg-white { box-shadow: none !important; border: 1px solid #eee !important; }
-        /* Asegurar que los gráficos se vean */
-        .recharts-responsive-container { min-height: 300px !important; }
-        /* Layout simplificado para papel */
-        .grid { display: block !important; }
-        .col-span-12, .col-span-8, .col-span-4 { width: 100% !important; margin-bottom: 20px; }
-      }
-    </style>
-<script type="importmap">
-{
-  "imports": {
-    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "recharts": "https://esm.sh/recharts@^3.7.0"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
 </head>
 <body class="bg-[#F4F4F4] text-[#333333]">
     <div id="root"></div>
-<script type="module" src="/index.tsx"></script>
+    <script type="module" src="/index.tsx"></script>
 </body>
 </html>

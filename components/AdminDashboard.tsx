@@ -2,13 +2,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { STAKES, INDICATOR_TEMPLATES, MONTHS } from '../constants';
 import { authService, dataService } from '../services/dataService';
-import { ReportCriteria, Priority, Indicator, User, Stake } from '../types';
+import { ReportCriteria, Priority, Indicator, User, Stake, CalculationType } from '../types';
 import IndicatorChart from './IndicatorChart';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell 
 } from 'recharts';
 
-type AdminView = 'overview' | 'comparison' | 'reminders' | 'users' | 'stake-detail' | 'config';
+type AdminView = 'overview' | 'comparison' | 'reminders' | 'users' | 'stake-detail' | 'config' | 'consolidated';
 
 interface EnrichedStake extends Stake {
   avgProgress: number;
@@ -52,7 +52,10 @@ const AdminDashboard: React.FC = () => {
   // Data State
   const [enrichedStakes, setEnrichedStakes] = useState<EnrichedStake[]>([]);
   const [allUsersList, setAllUsersList] = useState<User[]>([]);
+  const [rawData, setRawData] = useState<any[]>([]);
+  const [rawGoals, setRawGoals] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedPeriod, setSelectedPeriod] = useState<string>('Anual');
 
   // Claves editables
   const [editableKeys, setEditableKeys] = useState<Record<string, string>>({});
@@ -77,49 +80,9 @@ const AdminDashboard: React.FC = () => {
 
       const dbValues = res.rawData || []; 
       const dbGoals = res.rawGoals || []; 
-
-      // 2. Procesar datos para cada estaca
-      const processedStakes = STAKES.map(stake => {
-        const stakeValues = dbValues.filter((r: any[]) => r[0] === stake.id);
-        const stakeGoals = dbGoals.filter((r: any[]) => r[0] === stake.id);
-        const stakeUsers = dbUsers.filter((u: User) => u.stakeId === stake.id);
-
-        let totalProgress = 0;
-        const indicators = INDICATOR_TEMPLATES.map(template => {
-            const customGoalRow = stakeGoals.find((r: any[]) => r[1] === template.id);
-            const goal = customGoalRow ? Number(customGoalRow[2]) : template.goal;
-
-            const monthlyValues = MONTHS.map(m => {
-                const found = stakeValues.find((v: any[]) => v[1] === template.id && v[2] === m);
-                return { month: m, value: found ? Number(found[3]) : 0 };
-            });
-
-            const sum = monthlyValues.reduce((s, m) => s + m.value, 0);
-            const valuesWithData = monthlyValues.filter(v => v.value > 0);
-            const avg = valuesWithData.length > 0 ? sum / valuesWithData.length : 0;
-            const current = template.criteria === ReportCriteria.Cumulative ? sum : avg;
-            const progress = goal > 0 ? (current / goal) * 100 : 0;
-            
-            totalProgress += Math.min(progress, 100);
-
-            return { ...template, monthlyValues, goal, current, progress };
-        });
-
-        const hasReportedThisMonth = indicators.some(ind => {
-            const val = ind.monthlyValues.find(v => v.month === currentMonth)?.value;
-            return val !== undefined && val > 0;
-        });
-
-        return {
-            ...stake,
-            avgProgress: indicators.length > 0 ? totalProgress / indicators.length : 0,
-            indicators,
-            users: stakeUsers,
-            hasReported: hasReportedThisMonth
-        };
-      });
-
-      setEnrichedStakes(processedStakes);
+      
+      setRawData(dbValues);
+      setRawGoals(dbGoals);
       setIsLoading(false);
     };
 
@@ -133,6 +96,72 @@ const AdminDashboard: React.FC = () => {
     setEditableKeys(initial);
 
   }, [currentMonth]);
+
+  // Procesamiento reactivo de datos
+  useEffect(() => {
+    if (isLoading) return;
+
+    const processedStakes = STAKES.map(stake => {
+      const stakeValues = rawData.filter((r: any[]) => r[0] === stake.id);
+      const stakeGoals = rawGoals.filter((r: any[]) => r[0] === stake.id);
+      const stakeUsers = allUsersList.filter((u: User) => u.stakeId === stake.id);
+
+      let totalProgress = 0;
+      const indicators = INDICATOR_TEMPLATES.map(template => {
+          const customGoalRow = stakeGoals.find((r: any[]) => r[1] === template.id);
+          const goal = customGoalRow ? Number(customGoalRow[2]) : template.goal;
+
+          const monthlyValues = MONTHS.map(m => {
+              const found = stakeValues.find((v: any[]) => v[1] === template.id && v[2] === m);
+              return { month: m, value: found ? Number(found[3]) : 0 };
+          });
+
+          // Lógica de cálculo según periodo seleccionado
+          let current = 0;
+          
+          if (selectedPeriod === 'Anual') {
+            const sum = monthlyValues.reduce((s, m) => s + m.value, 0);
+            const valuesWithData = monthlyValues.filter(v => v.value > 0);
+            const avg = valuesWithData.length > 0 ? sum / valuesWithData.length : 0;
+            const lastValue = valuesWithData.length > 0 ? valuesWithData[valuesWithData.length - 1].value : 0;
+
+            if (template.calculationType === CalculationType.Sum) {
+                current = sum;
+            } else if (template.calculationType === CalculationType.Average) {
+                current = avg;
+            } else {
+                // Cumulative / Snapshot: Último valor reportado del año
+                current = lastValue;
+            }
+          } else {
+            // Periodo Específico (Mes)
+            const monthData = monthlyValues.find(v => v.month === selectedPeriod);
+            current = monthData ? monthData.value : 0;
+          }
+
+          const progress = goal > 0 ? (current / goal) * 100 : 0;
+          
+          totalProgress += Math.min(progress, 100);
+
+          return { ...template, monthlyValues, goal, current, progress };
+      });
+
+      const hasReportedThisMonth = indicators.some(ind => {
+          const val = ind.monthlyValues.find(v => v.month === currentMonth)?.value;
+          return val !== undefined && val > 0;
+      });
+
+      return {
+          ...stake,
+          avgProgress: indicators.length > 0 ? totalProgress / indicators.length : 0,
+          indicators,
+          users: stakeUsers,
+          hasReported: hasReportedThisMonth
+      };
+    });
+
+    setEnrichedStakes(processedStakes);
+  }, [rawData, rawGoals, allUsersList, selectedPeriod, currentMonth, isLoading]);
 
   const handleUpdateKey = (stakeId: string, newKey: string) => {
     setEditableKeys(prev => ({ ...prev, [stakeId]: newKey }));
@@ -185,6 +214,41 @@ const AdminDashboard: React.FC = () => {
     }).sort((a, b) => b.porcentaje - a.porcentaje);
   }, [filteredStakes, selectedIndicatorId]);
 
+  const consolidatedData = useMemo(() => {
+    const councils = ['Tegucigalpa', 'Comayagüela'];
+    return councils.map(council => {
+      const stakes = enrichedStakes.filter(s => s.council === council);
+      
+      const indicators = INDICATOR_TEMPLATES.map(template => {
+        let totalGoal = 0;
+        let totalCurrent = 0;
+        
+        stakes.forEach(stake => {
+          const ind = stake.indicators.find(i => i.id === template.id);
+          if (ind) {
+             totalGoal += ind.goal;
+             totalCurrent += ind.current;
+          }
+        });
+
+        // Ajuste especial para porcentajes (Ministración)
+        if (template.id === 'ministracion') {
+           const validStakes = stakes.filter(s => {
+               const i = s.indicators.find(ind => ind.id === template.id);
+               return i && i.goal > 0;
+           });
+           totalGoal = validStakes.length > 0 ? totalGoal / validStakes.length : 0;
+           totalCurrent = validStakes.length > 0 ? totalCurrent / validStakes.length : 0;
+        }
+
+        const progress = totalGoal > 0 ? (totalCurrent / totalGoal) * 100 : 0;
+        return { ...template, goal: totalGoal, current: totalCurrent, progress };
+      });
+
+      return { council, indicators };
+    });
+  }, [enrichedStakes]);
+
   const sendReminder = (user: User, stakeName: string) => {
     const message = `Estimado(a) ${user.name}, le saludamos de los Consejos. Notamos que la ${stakeName} aún no ha reportado los indicadores de ${currentMonth}. ¿Podría apoyarnos con la actualización de los datos? Muchas gracias.`;
     const phoneStr = String(user.phone || '');
@@ -235,6 +299,7 @@ const AdminDashboard: React.FC = () => {
           
           <div className="flex flex-wrap gap-3 no-print">
             <button onClick={() => setActiveView('overview')} className={`px-4 py-2 rounded text-[11px] font-bold uppercase tracking-widest transition-all ${activeView === 'overview' ? 'bg-white text-[#002D5A]' : 'bg-white/10 hover:bg-white/20'}`}>Semáforo</button>
+            <button onClick={() => setActiveView('consolidated')} className={`px-4 py-2 rounded text-[11px] font-bold uppercase tracking-widest transition-all ${activeView === 'consolidated' ? 'bg-white text-[#002D5A]' : 'bg-white/10 hover:bg-white/20'}`}>Consolidado</button>
             <button onClick={() => setActiveView('comparison')} className={`px-4 py-2 rounded text-[11px] font-bold uppercase tracking-widest transition-all ${activeView === 'comparison' ? 'bg-white text-[#002D5A]' : 'bg-white/10 hover:bg-white/20'}`}>Comparativa</button>
             <button onClick={() => setActiveView('reminders')} className={`px-4 py-2 rounded text-[11px] font-bold uppercase tracking-widest transition-all ${activeView === 'reminders' ? 'bg-white text-[#002D5A]' : 'bg-white/10 hover:bg-white/20'}`}>Reportes</button>
             <button onClick={() => setActiveView('users')} className={`px-4 py-2 rounded text-[11px] font-bold uppercase tracking-widest transition-all ${activeView === 'users' ? 'bg-white text-[#002D5A]' : 'bg-white/10 hover:bg-white/20'}`}>Usuarios</button>
@@ -242,6 +307,59 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* VISTA CONSOLIDADA */}
+      {activeView === 'consolidated' && (
+        <div className="space-y-8 animate-fade-in">
+          <div className="bg-white border border-[#E0E0E0] p-6 rounded-lg flex items-center justify-between gap-4 no-print">
+             <div className="flex gap-4 items-center">
+              <span className="text-[11px] font-bold text-[#999] uppercase tracking-widest">Periodo de Análisis:</span>
+              <select 
+                value={selectedPeriod} 
+                onChange={(e) => setSelectedPeriod(e.target.value)}
+                className="bg-[#F4F4F4] px-4 py-2 rounded text-[10px] font-bold uppercase tracking-widest text-[#002D5A] outline-none border border-transparent focus:border-[#002D5A]"
+              >
+                <option value="Anual">Anual (Acumulado)</option>
+                {MONTHS.map(m => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {consolidatedData.map(data => (
+            <div key={data.council} className="bg-white border border-[#E0E0E0] p-8 rounded-lg shadow-sm">
+              <h3 className="text-2xl font-serif font-bold text-[#333] mb-6 border-b pb-4">Consolidado Consejo {data.council}</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {data.indicators.map(ind => (
+                  <div key={ind.id} className="bg-slate-50 p-6 rounded border border-slate-100">
+                    <h4 className="font-bold text-[#333] text-sm mb-2 h-10 flex items-center">{ind.name}</h4>
+                    <div className="flex justify-between items-end">
+                      <div>
+                        <p className="text-[10px] uppercase font-black text-[#999] tracking-widest">Meta Total</p>
+                        <p className="text-xl font-bold text-[#002D5A]">{ind.goal.toLocaleString('es-HN', { maximumFractionDigits: 1 })}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] uppercase font-black text-[#999] tracking-widest">Real</p>
+                        <p className={`text-xl font-bold ${ind.progress >= 100 ? 'text-emerald-600' : 'text-[#333]'}`}>{ind.current.toLocaleString('es-HN', { maximumFractionDigits: 1 })}</p>
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <div className="flex justify-between text-[10px] font-black uppercase tracking-widest mb-1">
+                        <span>Progreso</span>
+                        <span>{Math.round(ind.progress)}%</span>
+                      </div>
+                      <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full ${ind.progress >= 80 ? 'bg-emerald-500' : ind.progress >= 50 ? 'bg-amber-500' : 'bg-rose-500'}`} style={{ width: `${Math.min(ind.progress, 100)}%` }}></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* VISTA DE USUARIOS */}
       {activeView === 'users' && (
@@ -396,6 +514,19 @@ const AdminDashboard: React.FC = () => {
         <div className="space-y-8">
           <div className="bg-white border border-[#E0E0E0] p-6 rounded-lg flex flex-col md:flex-row items-center justify-between gap-4 no-print">
             <div className="flex gap-4 items-center">
+              <span className="text-[11px] font-bold text-[#999] uppercase tracking-widest">Periodo:</span>
+              <select 
+                value={selectedPeriod} 
+                onChange={(e) => setSelectedPeriod(e.target.value)}
+                className="bg-[#F4F4F4] px-4 py-2 rounded text-[10px] font-bold uppercase tracking-widest text-[#002D5A] outline-none border border-transparent focus:border-[#002D5A]"
+              >
+                <option value="Anual">Anual (Acumulado)</option>
+                {MONTHS.map(m => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex gap-4 items-center">
               <span className="text-[11px] font-bold text-[#999] uppercase tracking-widest">Filtrar Consejo:</span>
               <div className="flex bg-[#F4F4F4] p-1 rounded">
                 {['All', 'Tegucigalpa', 'Comayagüela'].map(c => (
@@ -434,8 +565,12 @@ const AdminDashboard: React.FC = () => {
                     </td>
                     {stake.indicators.map(ind => (
                       <td key={ind.id} className="p-4 text-center">
-                        <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full text-[11px] font-black border-2 transition-transform hover:scale-110 cursor-help ${ind.progress >= 80 ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : ind.progress >= 50 ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-rose-50 border-rose-200 text-rose-700'}`} title={`${ind.name}: ${ind.current.toFixed(1)} / ${ind.goal}`}>
-                          {Math.round(ind.progress)}%
+                        <div className={`inline-flex flex-col items-center justify-center w-16 h-14 rounded-lg text-[10px] font-black border transition-transform hover:scale-105 cursor-help ${ind.progress >= 80 ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : ind.progress >= 50 ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-rose-50 border-rose-200 text-rose-700'}`} title={`${ind.name}`}>
+                          <div className="flex justify-between w-full px-1 opacity-70 text-[8px]">
+                             <span>M:{ind.goal}</span>
+                          </div>
+                          <span className="text-[12px]">{ind.current.toFixed(0)}</span>
+                          <span className="text-[9px] opacity-70 border-t border-black/10 w-full pt-0.5 mt-0.5">{Math.round(ind.progress)}%</span>
                         </div>
                       </td>
                     ))}

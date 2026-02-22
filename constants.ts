@@ -1,10 +1,12 @@
 
-import { Priority, ReportCriteria, IndicatorTemplate, Stake } from './types';
+import { Priority, ReportCriteria, IndicatorTemplate, Stake, CalculationType } from './types';
 
 export const MONTHS = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
 ];
+
+// ... (STAKES array remains unchanged, so I will skip it in the replacement if I can target specifically INDICATOR_TEMPLATES, but edit_file needs contiguous block. I'll include STAKES if necessary or just target INDICATOR_TEMPLATES if it's unique enough. It is at the end.)
 
 /**
  * CONFIGURACIÓN DE ESTACAS Y DISTRITOS
@@ -42,12 +44,84 @@ export const STAKES: Stake[] = [
 ];
 
 export const INDICATOR_TEMPLATES: IndicatorTemplate[] = [
-  { id: 'mision', priority: Priority.EmergingGeneration, name: 'Prepararse y servir una misión', criteria: ReportCriteria.Cumulative, goal: 25, description: 'Número total de jóvenes sirviendo actualmente.' },
-  { id: 'bautismos', priority: Priority.OrdinancesAndCovenants, name: 'Convenios bautismales', criteria: ReportCriteria.Cumulative, goal: 150, description: 'Bautismos confirmados en el mes.' },
-  { id: 'sacramental', priority: Priority.OrdinancesAndCovenants, name: 'Asistencia a reunión sacramental', criteria: ReportCriteria.MonthlyAverage, goal: 665, description: 'Promedio de asistencia dominical.' },
-  { id: 'templo', priority: Priority.OrdinancesAndCovenants, name: 'Obra del templo e historia familiar', criteria: ReportCriteria.Cumulative, goal: 600, description: 'Miembros con recomendaciones vigentes.' },
-  { id: 'ministracion', priority: Priority.Ministering, name: 'Entrevistas de ministración', criteria: ReportCriteria.MonthlyAverage, goal: 100, description: 'Porcentaje de entrevistas completadas.' },
-  { id: 'diezmo', priority: Priority.Ministering, name: 'Donantes de diezmos', criteria: ReportCriteria.Cumulative, goal: 500, description: 'Número de donantes distintos.' },
-  { id: 'ofrendas', priority: Priority.Ministering, name: 'Donantes de ofrendas de ayuno', criteria: ReportCriteria.Cumulative, goal: 500, description: 'Número de donantes de ofrendas.' },
-  { id: 'sacerdocio', priority: Priority.Others, name: 'Ordenaciones Sacerdocio Melquicedec', criteria: ReportCriteria.Cumulative, goal: 32, description: 'Hermanos ordenados a Élder o Sumo Sacerdote.' }
+  { 
+    id: 'mision', 
+    priority: Priority.EmergingGeneration, 
+    name: 'Prepararse y servir una misión', 
+    criteria: ReportCriteria.Cumulative, 
+    calculationType: CalculationType.Cumulative,
+    goal: 25, 
+    description: 'Número total de jóvenes sirviendo actualmente.',
+    helpText: 'Acumulable: Reporte la cantidad total de misioneros que tiene en el campo al cierre del mes. Si tenía 10 y salió 1, reporte 11. Si regresó 1, reste.' 
+  },
+  { 
+    id: 'bautismos', 
+    priority: Priority.OrdinancesAndCovenants, 
+    name: 'Convenios bautismales', 
+    criteria: ReportCriteria.Cumulative, 
+    calculationType: CalculationType.Sum,
+    goal: 150, 
+    description: 'Bautismos confirmados en el mes.',
+    helpText: 'Sumable: Reporte únicamente los bautismos realizados durante este mes. Estos se sumarán al total anual.'
+  },
+  { 
+    id: 'sacramental', 
+    priority: Priority.OrdinancesAndCovenants, 
+    name: 'Asistencia a reunión sacramental', 
+    criteria: ReportCriteria.MonthlyAverage, 
+    calculationType: CalculationType.Average,
+    goal: 665, 
+    description: 'Promedio de asistencia dominical.',
+    helpText: 'Promedio: Reporte el promedio de asistencia de los domingos del mes.'
+  },
+  { 
+    id: 'templo', 
+    priority: Priority.OrdinancesAndCovenants, 
+    name: 'Obra del templo e historia familiar', 
+    criteria: ReportCriteria.Cumulative, 
+    calculationType: CalculationType.Cumulative,
+    goal: 600, 
+    description: 'Miembros con recomendaciones vigentes.',
+    helpText: 'Acumulable: Reporte el total de miembros con recomendación vigente al cierre del mes.'
+  },
+  { 
+    id: 'ministracion', 
+    priority: Priority.Ministering, 
+    name: 'Entrevistas de ministración', 
+    criteria: ReportCriteria.MonthlyAverage, 
+    calculationType: CalculationType.Cumulative,
+    goal: 100, 
+    description: 'Porcentaje de entrevistas completadas.',
+    helpText: 'Acumulable: Reporte el total acumulado de entrevistas realizadas.'
+  },
+  { 
+    id: 'diezmo', 
+    priority: Priority.Ministering, 
+    name: 'Donantes de diezmos', 
+    criteria: ReportCriteria.Cumulative, 
+    calculationType: CalculationType.Cumulative,
+    goal: 500, 
+    description: 'Número de donantes distintos.',
+    helpText: 'Acumulable: Reporte el número total de donantes acumulados hasta la fecha.'
+  },
+  { 
+    id: 'ofrendas', 
+    priority: Priority.Ministering, 
+    name: 'Donantes de ofrendas de ayuno', 
+    criteria: ReportCriteria.Cumulative, 
+    calculationType: CalculationType.Cumulative,
+    goal: 500, 
+    description: 'Número de donantes de ofrendas.',
+    helpText: 'Acumulable: Reporte el número total de donantes acumulados hasta la fecha.'
+  },
+  { 
+    id: 'sacerdocio', 
+    priority: Priority.Others, 
+    name: 'Ordenaciones Sacerdocio Melquicedec', 
+    criteria: ReportCriteria.Cumulative, 
+    calculationType: CalculationType.Sum,
+    goal: 32, 
+    description: 'Hermanos ordenados a Élder o Sumo Sacerdote.',
+    helpText: 'Sumable: Reporte únicamente las ordenaciones realizadas durante este mes. Se sumarán al anual.'
+  }
 ];

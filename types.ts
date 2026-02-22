@@ -16,13 +16,21 @@ export interface MonthData {
   value: number;
 }
 
+export enum CalculationType {
+  Cumulative = 'cumulative', // Snapshot (e.g., current missionaries in field)
+  Sum = 'sum',              // Flow (e.g., baptisms this month)
+  Average = 'average'       // Average (e.g., attendance)
+}
+
 export interface IndicatorTemplate {
   id: string;
   priority: Priority;
   name: string;
   criteria: ReportCriteria;
+  calculationType: CalculationType;
   goal: number;
   description: string;
+  helpText?: string; // Tooltip text for reporting
 }
 
 export interface Indicator extends IndicatorTemplate {

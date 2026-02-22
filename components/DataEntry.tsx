@@ -82,7 +82,17 @@ const DataEntry: React.FC<DataEntryProps> = ({ indicators, onUpdate }) => {
                   {items.map(indicator => (
                     <tr key={indicator.id} className="border-b border-[#F0F0F0] hover:bg-slate-50 transition-colors group">
                       <td className="sticky left-0 z-10 bg-white group-hover:bg-slate-50 p-4 border-r border-[#F0F0F0] shadow-[4px_0_10px_-5px_rgba(0,0,0,0.05)]">
-                        <p className="text-[13px] font-bold text-[#333] leading-tight">{indicator.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-[13px] font-bold text-[#333] leading-tight">{indicator.name}</p>
+                          {indicator.helpText && (
+                            <div className="group relative">
+                              <div className="w-3 h-3 rounded-full bg-slate-200 text-[#666] flex items-center justify-center text-[9px] font-bold cursor-help">?</div>
+                              <div className="absolute left-full top-0 ml-2 w-48 bg-[#333] text-white text-[10px] p-2 rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+                                {indicator.helpText}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                         <p className="text-[9px] text-[#999] uppercase font-bold mt-1 tracking-tighter">
                           {indicator.criteria === ReportCriteria.Cumulative ? 'Acumulable' : 'Promediable'}
                         </p>
@@ -168,7 +178,17 @@ const DataEntry: React.FC<DataEntryProps> = ({ indicators, onUpdate }) => {
                        <div key={indicator.id} className={`bg-white border rounded-lg p-5 transition-all ${hasValue ? 'border-emerald-200 shadow-sm' : 'border-[#E0E0E0] shadow-sm'}`}>
                          <div className="flex justify-between items-start mb-4">
                            <div className="flex-1 pr-4">
-                              <h4 className="font-bold text-[#333] text-[15px] leading-tight mb-1">{indicator.name}</h4>
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 className="font-bold text-[#333] text-[15px] leading-tight">{indicator.name}</h4>
+                                {indicator.helpText && (
+                                  <div className="group relative flex items-center justify-center">
+                                    <div className="w-4 h-4 rounded-full bg-blue-100 text-[#002D5A] flex items-center justify-center text-[10px] font-bold cursor-help">?</div>
+                                    <div className="absolute left-6 top-0 w-48 bg-[#333] text-white text-[10px] p-2 rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+                                      {indicator.helpText}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
                               <p className="text-[10px] text-[#999] leading-tight">{indicator.description}</p>
                            </div>
                            <div className="flex flex-col items-end">

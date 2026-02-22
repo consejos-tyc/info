@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Open Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Libre Baskerville", serif;
+}
+
+/* Animaciones de Skeleton Loading */
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+.skeleton {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(to right, #eff1f3 4%, #e2e2e2 25%, #eff1f3 36%);
+  background-size: 1000px 100%;
+}
+
+/* Utilidades de Impresión / PDF */
+@media print {
+  body { background-color: white !important; -webkit-print-color-adjust: exact; }
+  .no-print, header, nav, button, .shadow-xl { display: none !important; }
+  .print-only { display: block !important; }
+  .print-break-avoid { break-inside: avoid; }
+  .bg-white { box-shadow: none !important; border: 1px solid #eee !important; }
+  /* Asegurar que los gráficos se vean */
+  .recharts-responsive-container { min-height: 300px !important; }
+  /* Layout simplificado para papel */
+  .grid { display: block !important; }
+  .col-span-12, .col-span-8, .col-span-4 { width: 100% !important; margin-bottom: 20px; }
+}

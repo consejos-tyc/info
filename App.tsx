@@ -311,10 +311,13 @@ const App: React.FC = () => {
                   <div className="inline-block border-y border-white/40 py-3 mb-4">
                      <span className="text-white uppercase tracking-[0.4em] text-[12px] font-bold">Consejos Tegucigalpa y Comayagüela</span>
                   </div>
-                  <h1 className="text-white text-3xl md:text-5xl lg:text-6xl font-serif font-bold leading-tight drop-shadow-2xl animate-slide-up">
-                    “La buena información es el principio de la inspiración”
+                  <h1 className="text-white text-2xl md:text-4xl lg:text-5xl font-serif font-bold leading-tight drop-shadow-2xl animate-slide-up">
+                    “A diferencia de las instituciones del mundo, que nos enseñan a saber algo, el Evangelio de Jesucristo nos desafía a llegar a ser algo”
                   </h1>
-                  <p className="text-white text-xl md:text-3xl font-serif font-medium drop-shadow-md max-w-2xl mx-auto opacity-95 italic">— Presidente Dallin H. Oaks</p>
+                  <div className="space-y-4">
+                    <p className="text-white text-lg md:text-2xl font-serif font-medium drop-shadow-md max-w-2xl mx-auto opacity-95 italic">— Presidente Dallin H. Oaks</p>
+                    <p className="text-white/70 text-[9px] md:text-[11px] font-sans uppercase tracking-[0.2em] max-w-2xl mx-auto drop-shadow-sm">Discurso: El desafío de lo que debemos llegar a ser</p>
+                  </div>
                   <div className="pt-8">
                     <button onClick={() => setCurrentView('indicators')} className="bg-white text-[#002D5A] font-bold px-14 py-6 rounded-sm shadow-2xl hover:bg-[#F9F9F9] hover:scale-105 transition-all uppercase tracking-[0.2em] text-[14px]">
                       Acceder al Portal
@@ -360,7 +363,7 @@ const App: React.FC = () => {
                     </span>
                   </div>
                   <h3 className="text-2xl font-serif font-bold text-[#333] mb-3 group-hover:text-[#002D5A] transition-colors">Capacitación</h3>
-                  <p className="text-sm text-[#666] leading-relaxed mb-4">Acceda al repositorio de recursos y guías para presidentes y secretarios.</p>
+                  <p className="text-sm text-[#666] leading-relaxed mb-4">Acceda al repositorio de recursos para presidentes y secretarios.</p>
                   <span className="text-[11px] font-bold text-[#002D5A] uppercase tracking-widest border-b-2 border-transparent group-hover:border-[#002D5A]/30 transition-all pb-0.5">Explorar Recursos</span>
                 </div>
 
