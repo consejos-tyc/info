@@ -88,12 +88,16 @@ const AdminDashboard: React.FC = () => {
 
     loadAdminData();
 
-    const custom = authService.getCustomStakeKeys();
-    const initial: Record<string, string> = {};
-    STAKES.forEach(s => {
-      initial[s.id] = custom[s.id] || s.accessKey;
-    });
-    setEditableKeys(initial);
+    const loadKeys = async () => {
+      const custom = await authService.getCustomStakeKeys();
+      const initial: Record<string, string> = {};
+      STAKES.forEach(s => {
+        initial[s.id] = custom[s.id] || s.accessKey;
+      });
+      setEditableKeys(initial);
+    };
+    
+    loadKeys();
 
   }, [currentMonth]);
 
@@ -167,9 +171,9 @@ const AdminDashboard: React.FC = () => {
     setEditableKeys(prev => ({ ...prev, [stakeId]: newKey }));
   };
 
-  const saveKey = (stakeId: string) => {
+  const saveKey = async (stakeId: string) => {
     setSavingKey(stakeId);
-    authService.saveStakeKey(stakeId, editableKeys[stakeId]); // Local
+    await authService.saveStakeKey(stakeId, editableKeys[stakeId]); // Cloud + Local
     setTimeout(() => {
       setSavingKey(null);
     }, 800);

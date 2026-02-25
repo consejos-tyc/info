@@ -3,7 +3,7 @@ import { Indicator, IndicatorTemplate, MonthData, User, UserRole, Stake } from '
 import { INDICATOR_TEMPLATES, MONTHS, STAKES } from '../constants';
 
 // *** URL DE PRODUCCIÓN DE GOOGLE APPS SCRIPT ***
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxy7IepGM11gS3doMgDd74MigSP-lbZiwm5OBMXGhXPevTUul_TtEDZ44408Xl9bbxo7Q/exec'; 
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxyATTuxsQzHlg1f3r4dgUh81Ytq3zNDiu2id-eeKGEK7YwN4KFe-xSu4l2nqQMpAoDzA/exec'; 
 
 const apiCall = async (action: string, payload: any = {}) => {
   try {
@@ -79,8 +79,14 @@ export const authService = {
     return { error: 'Credenciales de consejos incorrectas.' };
   },
 
-  verifyStakeKey: (stakeId: string, inputKey: string): boolean => {
-    // Check custom keys first
+  verifyStakeKey: async (stakeId: string, inputKey: string): Promise<boolean> => {
+    // 1. Intentar obtener de la nube primero (vía get_admin_data o similar si ya estamos en sesión, 
+    // pero para login necesitamos una llamada específica o usar la cache si existe)
+    // Para simplificar el login, podemos llamar a una acción que verifique la clave en el servidor
+    const res = await apiCall('verify_key', { stakeId, key: inputKey });
+    if (res.valid !== undefined) return res.valid;
+
+    // Fallback a local si la API falla o no está implementada la acción verify_key
     const customKeys = localStorage.getItem('lds_stake_keys');
     const parsedKeys = customKeys ? JSON.parse(customKeys) : {};
     
@@ -92,12 +98,22 @@ export const authService = {
     return (defaultStake?.accessKey || "").toUpperCase().trim() === inputKey.toUpperCase().trim();
   },
 
-  getCustomStakeKeys: (): Record<string, string> => {
+  getCustomStakeKeys: async (): Promise<Record<string, string>> => {
+    // Intentar obtener de la nube
+    const res = await apiCall('get_keys');
+    if (res.keys) {
+      localStorage.setItem('lds_stake_keys', JSON.stringify(res.keys));
+      return res.keys;
+    }
     const keys = localStorage.getItem('lds_stake_keys');
     return keys ? JSON.parse(keys) : {};
   },
 
-  saveStakeKey: (stakeId: string, key: string) => {
+  saveStakeKey: async (stakeId: string, key: string) => {
+    // Guardar en la nube
+    await apiCall('save_key', { stakeId, key });
+    
+    // Guardar localmente también
     const keys = localStorage.getItem('lds_stake_keys');
     const parsedKeys = keys ? JSON.parse(keys) : {};
     parsedKeys[stakeId] = key;

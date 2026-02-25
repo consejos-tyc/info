@@ -32,7 +32,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     setIsLoading(true);
     
     // Check key locally first for speed
-    const isValid = authService.verifyStakeKey(stakeId, stakeKey);
+    const isValid = await authService.verifyStakeKey(stakeId, stakeKey);
     
     if (isValid) {
       // Check cloud user or register
